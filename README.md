@@ -6,7 +6,7 @@ Fork the repo to start tracking your collection. I've started to populate the `c
 ## Main program
 
 ```cmd
-usage: panini_tracker.py [-h] (-a ADD | -m | -o | -s | -c COMPARE | -d)
+usage: panini_tracker.py [-h] (-a ADD | -m | -o | -s | -c COMPARE | -d | -e | -f FIND | -r REMOVE)
 
 Panini Album Progress Tracker
 
@@ -18,6 +18,9 @@ options:
   -s, --stats           Print collection stats
   -c, --compare COMPARE URL to another CSV file for exchange comparison
   -d, --duplicates      Print duplicate stickers and their quantities
+  -e, --exchange        Print exchange info (duplicates and missing)
+  -f, --find FIND       Check if stickers exist in collection (comma-separated list)
+  -r, --remove REMOVE   Remove stickers from collection (comma-separated list)
 ```
 
 ## Auto Scanner
