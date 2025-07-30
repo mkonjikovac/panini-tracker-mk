@@ -137,6 +137,35 @@ def compare_collections(other_url: str, collection: Dict[int, int]) -> None:
     for sticker in i_give:
         print(f"- Sticker #{sticker} (you have {my_duplicates[sticker]} extra)")
 
+def compare_local_collections(their_duplicates: List[int], their_missing: List[int], collection: Dict[int, int]) -> None:
+    """Compare with another collection using provided duplicates and missing lists."""
+    my_duplicates = {k: v-1 for k, v in collection.items() if v > 1}
+    my_needs = [i for i in range(1, TOTAL_STICKERS + 1) if i not in collection]
+    
+    # What they can give me (intersection of my needs and their duplicates)
+    they_give = [num for num in my_needs if num in their_duplicates]
+    
+    # What I can give them (intersection of their needs and my duplicates)
+    i_give = [num for num in their_missing if num in my_duplicates]
+    
+    print("\nExchange Opportunities:")
+    print("\nWhat they can give you:")
+    if they_give:
+        for sticker in sorted(they_give):
+            print(f"- Sticker #{sticker}")
+    else:
+        print("None of their duplicates match your needs.")
+    
+    print("\nWhat you can give them:")
+    if i_give:
+        for sticker in sorted(i_give):
+            print(f"- Sticker #{sticker} (you have {my_duplicates[sticker]} extra)")
+    else:
+        print("None of your duplicates match their needs.")
+    
+    if they_give and i_give:
+        print(f"\nPossible trade: {len(min(they_give, i_give, key=len))} stickers")
+
 def print_duplicates(collection: Dict[int, int]) -> None:
     """Print duplicate stickers and their quantities."""
     duplicates = {k: v for k, v in collection.items() if v > 1}
@@ -207,6 +236,17 @@ def remove_stickers(stickers_to_remove: List[int], collection: Dict[int, int]) -
     
     return collection
 
+def parse_number_list(number_str: str) -> List[int]:
+    """Parse a comma-separated list of numbers that may include ranges (e.g., '1,2,3-6,8')."""
+    result = []
+    for part in number_str.split(','):
+        if '-' in part:
+            start, end = map(int, part.split('-'))
+            result.extend(range(start, end + 1))
+        else:
+            result.append(int(part.strip()))
+    return result
+
 def main():
     parser = argparse.ArgumentParser(description="Panini Album Progress Tracker")
     group = parser.add_mutually_exclusive_group(required=True)
@@ -215,6 +255,9 @@ def main():
     group.add_argument("-o", "--owned", action="store_true", help="Print owned sticker numbers")
     group.add_argument("-s", "--stats", action="store_true", help="Print collection stats")
     group.add_argument("-c", "--compare", help="URL to another CSV file for exchange comparison")
+    group.add_argument("-cl", "--compare-local", nargs=2, 
+                      metavar=('DUPLICATES', 'MISSING'),
+                      help="Compare with local lists (format: 1,2,3 for both lists)")
     group.add_argument("-d", "--duplicates", action="store_true", help="Print duplicate stickers and their quantities")
     group.add_argument("-e", "--exchange", action="store_true", help="Print exchange info (duplicates and missing)")
     group.add_argument("-f", "--find", help="Check if stickers exist in collection (comma-separated list)")
@@ -251,6 +294,24 @@ def main():
     elif args.compare:
         compare_collections(args.compare, collection)
         
+    elif args.compare_local:
+        try:
+            their_duplicates = parse_number_list(args.compare_local[0])
+            their_missing = parse_number_list(args.compare_local[1])
+            
+            # Validate sticker numbers
+            all_numbers = their_duplicates + their_missing
+            invalid_stickers = [s for s in all_numbers if s < 1 or s > TOTAL_STICKERS]
+            if invalid_stickers:
+                print(f"Error: Invalid sticker numbers: {', '.join(map(str, invalid_stickers))}")
+                print(f"Sticker numbers must be between 1 and {TOTAL_STICKERS}")
+                return
+            
+            compare_local_collections(their_duplicates, their_missing, collection)
+        except ValueError as e:
+            print(f"Error: {str(e)}")
+            print("Please provide valid sticker numbers in format: 1,2,3-6,8")
+    
     elif args.duplicates:
         print_duplicates(collection)
         
